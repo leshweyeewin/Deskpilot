@@ -61,6 +61,31 @@ def test_load_portfolio_missing_file_returns_error(monkeypatch, tmp_path):
     assert "error" in result
 
 
+def test_build_snapshot_from_rows_splits_by_kind_and_coerces_types():
+    # Simulates rows parsed from a published Google Sheet CSV.
+    rows = [
+        {"kind": "position", "broker": "Tiger", "ticker": "nvda", "qty": "40",
+         "avg_cost": "118.2", "market_price": "217.55", "currency": "usd"},
+        {"kind": "option", "broker": "Tiger", "ticker": "nvda", "type": "put",
+         "strike": "220", "expiry": "2026-09-04", "qty": "-2",
+         "action": "sell-to-open", "premium": "6.5", "currency": "usd"},
+        {"kind": "cash", "currency": "sgd", "amount": "12,450"},
+    ]
+    snap = portfolio.build_snapshot_from_rows(rows)
+
+    p = snap["positions"][0]
+    assert p["ticker"] == "NVDA" and p["qty"] == 40 and p["currency"] == "USD"
+    # unrealized_pl computed when not supplied
+    assert p["unrealized_pl"] == round((217.55 - 118.2) * 40, 2)
+
+    o = snap["options"][0]
+    assert o["underlying"] == "NVDA" and o["type"] == "PUT"
+    assert o["qty"] == -2 and o["strike"] == 220.0
+
+    # comma-formatted amount parses; currency upper-cased
+    assert snap["cash"]["SGD"] == 12450.0
+
+
 def test_memory_roundtrip_local_backend(monkeypatch, tmp_path):
     # Rebuild the bank against a temp file with no GCP project -> local backend.
     from deskpilot.memory import store

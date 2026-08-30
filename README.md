@@ -42,18 +42,28 @@ offline demos). Served on **Cloud Run** via ADK's FastAPI app.
 - **Google Agent Framework** — Google ADK (`google-adk`), multi-agent orchestration.
 - **Google Cloud infra** — Cloud Run (serving) + Firestore (memory bank).
 
-## How it relates to broker-portfolio-sync
+## Where positions come from (a Google Sheet)
 
-Deskpilot is the **agentic brain**; the deterministic
-[`broker-portfolio-sync`](../broker-portfolio-sync) pipeline is the **data
-backend**. That pipeline consolidates Longbridge + Tiger + MooMoo into one
-normalized snapshot (common schema → FIFO P/L → FX → SGD); Deskpilot reads that
-snapshot via `load_portfolio` and reasons over it. See the disclosure below.
+Deskpilot reads your current book from a **published Google Sheet** — read as CSV
+over its public link, so **no credentials are required** and anyone (including a
+reviewer with their own sheet) can point Deskpilot at their data by setting one
+env var, `DESKPILOT_PORTFOLIO_CSV_URL`.
 
 ```
-broker-portfolio-sync  →  portfolio_snapshot.json  →  Deskpilot (ADK + Gemini)  →  daily plan (Firestore)
-   (deterministic sync)         (data contract)            (agentic reasoning)
+Google Sheet (published CSV)  →  load_portfolio  →  Deskpilot (ADK + Gemini)  →  daily plan (Firestore)
+   (you keep it updated)          (normalize)          (agentic reasoning)
 ```
+
+Set it up:
+1. Build a sheet with the columns in [`data/portfolio_template.csv`](data/portfolio_template.csv)
+   (one row per holding; a `kind` column marks each row as `position`, `option`,
+   or `cash`).
+2. **File → Share → Publish to web →** choose the tab **→ CSV → Publish**.
+3. Put that `…/pub?…&output=csv` link in `DESKPILOT_PORTFOLIO_CSV_URL`.
+
+When the env var is unset, Deskpilot uses the shipped JSON sample, so it runs with
+no network or credentials (this is what the tests use). You can keep the sheet
+current by hand, or feed it from any pipeline you already run.
 
 ## Quickstart (local)
 
@@ -89,10 +99,10 @@ Deskpilot/
 │  ├─ run.py           # CLI runner (streams tool calls + final plan)
 │  ├─ tools/
 │  │  ├─ market.py     # get_quote, get_expected_move (yfinance)
-│  │  └─ portfolio.py  # load_portfolio (snapshot from broker-portfolio-sync)
+│  │  └─ portfolio.py  # load_portfolio (published Google Sheet CSV → snapshot)
 │  └─ memory/store.py  # Firestore memory bank + local fallback
 ├─ server.py           # Cloud Run entrypoint (ADK FastAPI app)
-├─ data/               # sample portfolio snapshot
+├─ data/               # portfolio_template.csv + JSON sample fallback
 ├─ tests/              # deterministic unit tests
 ├─ Dockerfile
 ├─ DEPLOY.md           # Cloud Run + Firestore deploy
@@ -102,16 +112,10 @@ Deskpilot/
 ## License / disclosure
 
 Personal hackathon project (All Things Agentic — Taskmaster track). It is a **new
-project** built during the submission window that incorporates prior work by the
-same author, disclosed here per the "New Projects Only" rule:
-
-- **broker-portfolio-sync** — the author's deterministic multi-broker sync +
-  analytics pipeline, used as the upstream data contract (portfolio snapshot). No
-  broker credentials or SDKs are vendored into Deskpilot.
-- **nexus-concierge** — the author's earlier ADK multi-agent project. Deskpilot
-  reuses the orchestrator–specialist *pattern* but is a fresh implementation
-  targeting Gemini 3.5+, Cloud Run, and Firestore.
-
-All agent code, tools, memory layer, serving, deploy config, and tests in this
-repository were written for this submission. No credentials are committed; see
+project** built during the submission window. All code here — agents, tools,
+memory layer, serving, deploy config, and tests — was written for this submission.
+Its data source is a plain Google Sheet, so it has no dependency on any of the
+author's other systems. The orchestrator–specialist approach is informed by the
+author's earlier ADK experiments, but this is a fresh implementation targeting
+Gemini 3.5+, Cloud Run, and Firestore. No credentials are committed; see
 `.gitignore`.

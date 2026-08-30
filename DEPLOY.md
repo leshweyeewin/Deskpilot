@@ -85,6 +85,21 @@ The service itself runs in `asia-southeast1` (`--region $REGION`); only the Vert
 Grant the runtime service account `roles/datastore.user` (Firestore) and, for
 Vertex, `roles/aiplatform.user`.
 
+### Point it at your portfolio Google Sheet (optional)
+
+Deskpilot reads positions from a **published Google Sheet** (CSV, no credentials).
+Publish your sheet (File → Share → Publish to web → tab → CSV) and add the link as
+an env var — no secret needed since the link is public read-only:
+
+```bash
+gcloud run services update deskpilot --region $REGION \
+  --update-env-vars "DESKPILOT_PORTFOLIO_CSV_URL=https://docs.google.com/spreadsheets/d/e/XXXX/pub?gid=0&single=true&output=csv"
+```
+
+Columns are in `data/portfolio_template.csv`. If you skip this, the service uses
+the shipped JSON sample. (PowerShell: quote the whole `--update-env-vars` value, as
+noted above.)
+
 ## 5. Use it
 
 - Dev UI: open the service URL + `/dev-ui/`, pick the `deskpilot` app, chat.

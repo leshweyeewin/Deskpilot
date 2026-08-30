@@ -1,0 +1,8 @@
+kind,broker,ticker,type,qty,avg_cost,market_price,strike,expiry,action,premium,currency,amount
+position,Longbridge,NVDA,,40,118.20,217.55,,,,,USD,
+position,Tiger,AAPL,,60,214.10,319.70,,,,,USD,
+position,MooMoo,GOOGL,,25,168.90,346.59,,,,,USD,
+option,Tiger,NVDA,PUT,-2,,,220,2026-09-04,sell-to-open,6.50,USD,
+option,Longbridge,AAPL,CALL,-1,,,330,2026-09-24,sell-to-open,5.20,USD,
+cash,,,,,,,,,,,SGD,12450
+cash,,,,,,,,,,,USD,3120.55
