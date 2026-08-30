@@ -7,7 +7,16 @@ import os
 import pytest
 
 from deskpilot.tools import market, portfolio
-from deskpilot.tools.market import _rsi, _sma
+from deskpilot.tools.market import _num, _rsi, _sma
+
+
+def test_num_sanitizes_nan_inf_and_none():
+    # NaN/inf are invalid JSON and must become None (else Gemini 400s).
+    assert _num(float("nan")) is None
+    assert _num(float("inf")) is None
+    assert _num(None) is None
+    assert _num("x") is None
+    assert _num(12.3456) == 12.35
 
 
 def test_rsi_all_gains_saturates_to_100():

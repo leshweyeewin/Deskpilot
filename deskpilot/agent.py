@@ -1,15 +1,19 @@
 """Deskpilot ADK agent graph.
 
-An Orchestrator (root) LlmAgent delegates to three specialist LlmAgents via
-ADK's agent-transfer mechanism. Every specialist and the orchestrator run on
-Gemini (>= 3.5). All tools are read-only decision support: Deskpilot never
-places, modifies, or cancels an order.
+An Orchestrator (root) LlmAgent runs a fixed daily routine, calling three
+specialist LlmAgents **as tools** (ADK ``AgentTool``). Using AgentTool instead
+of ``sub_agents`` transfer keeps the orchestrator in control for the whole
+multi-step workflow, so it can gather every specialist's output, synthesize one
+plan, and persist it -- the Taskmaster pattern. Every agent runs on Gemini
+(>= 3.5). All tools are read-only decision support: Deskpilot never places,
+modifies, or cancels an order.
 
 ADK discovers ``root_agent`` from this module.
 """
 from __future__ import annotations
 
 from google.adk.agents import LlmAgent
+from google.adk.tools.agent_tool import AgentTool
 
 from .config import MODEL
 from .memory.store import get_last_plan, recall, remember, save_daily_plan
@@ -69,21 +73,33 @@ root_agent = LlmAgent(
     instruction=(
         "You are Deskpilot, the autonomous operator of the user's personal "
         "trading desk. You turn a synced multi-broker portfolio into a concrete "
-        "daily plan.\n\n"
-        "Operating procedure for a daily run:\n"
+        "daily plan. You call specialists as tools and stay in control the whole "
+        "run -- you MUST complete every step below yourself and finish by saving "
+        "the plan. Do not end the turn by suggesting the user run another agent.\n\n"
+        "Operating procedure for a daily run (do all steps, in order):\n"
         "1. Call get_last_plan to recall yesterday's intent.\n"
-        "2. Delegate to RiskOfficer to review the live book (expiries, exposure, P/L).\n"
-        "3. For each name that needs a decision, delegate to MarketAnalyst for the "
-        "technical read and, when options income is relevant, to OptionsStrategist.\n"
+        "2. Call RiskOfficer to review the live book (expiries, exposure, P/L).\n"
+        "3. For each name RiskOfficer flags, call MarketAnalyst for the technical "
+        "read; when options income or a defensive roll is relevant, call "
+        "OptionsStrategist. Call these as many times as needed.\n"
         "4. Use recall/remember to carry trade theses across days.\n"
         "5. Synthesize ONE prioritized daily plan: what to watch, what setups are "
-        "actionable, what risk to manage today. Then call save_daily_plan with it.\n\n"
+        "actionable, what risk to manage today. Then call save_daily_plan with the "
+        "final plan text, and present that same plan as your final answer.\n\n"
         "Rules: you are read-only decision support and MUST NOT place, modify, or "
         "cancel any order, or give personalized financial advice framed as a "
         "recommendation to buy/sell for a specific person's situation. Present "
         "setups and reasoning; the user decides and executes. Cite the numbers "
         "your specialists return. Be concise and prioritized."
     ),
-    sub_agents=[risk_officer, market_analyst, options_strategist],
-    tools=[load_portfolio, remember, recall, save_daily_plan, get_last_plan],
+    tools=[
+        AgentTool(agent=risk_officer),
+        AgentTool(agent=market_analyst),
+        AgentTool(agent=options_strategist),
+        load_portfolio,
+        remember,
+        recall,
+        save_daily_plan,
+        get_last_plan,
+    ],
 )

@@ -8,7 +8,21 @@ reason about the failure instead of crashing the run.
 """
 from __future__ import annotations
 
+import math
 from typing import Any
+
+
+def _num(x: Any) -> float | None:
+    """Round to 2dp, or return None for NaN/inf/None.
+
+    Tool results are serialized into the Gemini request as JSON; NaN/inf are not
+    valid JSON and cause a 400 INVALID_ARGUMENT. Coerce them to None here.
+    """
+    try:
+        f = float(x)
+    except (TypeError, ValueError):
+        return None
+    return round(f, 2) if math.isfinite(f) else None
 
 
 def _rsi(closes: list[float], period: int = 14) -> float | None:
@@ -59,6 +73,12 @@ def get_quote(ticker: str) -> dict[str, Any]:
         if hist is None or hist.empty:
             return {"ticker": symbol, "error": "no price history returned"}
 
+        # Drop rows with missing OHLC before computing; yfinance can return NaN
+        # rows (holidays, adjustments) that would poison the indicators.
+        hist = hist.dropna(subset=["Close", "High", "Low"])
+        if hist.empty:
+            return {"ticker": symbol, "error": "no usable price rows after cleaning"}
+
         closes = [float(c) for c in hist["Close"].tolist()]
         highs = [float(h) for h in hist["High"].tolist()]
         lows = [float(low) for low in hist["Low"].tolist()]
@@ -99,15 +119,15 @@ def get_quote(ticker: str) -> dict[str, Any]:
 
         return {
             "ticker": symbol,
-            "price": price,
-            "sma20": sma20,
-            "sma50": sma50,
-            "sma200": sma200,
-            "rsi14": rsi,
-            "atr_pct": atr_pct,
-            "high_52w": hi_52,
-            "low_52w": lo_52,
-            "pct_of_52w_range": pos_52,
+            "price": _num(price),
+            "sma20": _num(sma20),
+            "sma50": _num(sma50),
+            "sma200": _num(sma200),
+            "rsi14": _num(rsi),
+            "atr_pct": _num(atr_pct),
+            "high_52w": _num(hi_52),
+            "low_52w": _num(lo_52),
+            "pct_of_52w_range": _num(pos_52),
             "trend": trend,
         }
     except Exception as exc:  # noqa: BLE001 - surface any failure to the agent
@@ -156,11 +176,11 @@ def get_expected_move(ticker: str) -> dict[str, Any]:
         return {
             "ticker": symbol,
             "expiry": expiry,
-            "spot": round(spot, 2),
-            "atm_strike": round(float(atm_call["strike"]), 2),
-            "straddle_price": round(straddle, 2),
-            "expected_move_usd": round(straddle, 2),
-            "expected_move_pct": move_pct,
+            "spot": _num(spot),
+            "atm_strike": _num(atm_call["strike"]),
+            "straddle_price": _num(straddle),
+            "expected_move_usd": _num(straddle),
+            "expected_move_pct": _num(move_pct),
         }
     except Exception as exc:  # noqa: BLE001
         return {"ticker": symbol, "error": f"{type(exc).__name__}: {exc}"}
