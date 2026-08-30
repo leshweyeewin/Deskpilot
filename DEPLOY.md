@@ -54,6 +54,21 @@ gcloud run deploy deskpilot \
   --set-secrets GOOGLE_API_KEY=gemini-api-key:latest
 ```
 
+> **PowerShell users — quote the env-vars value.** PowerShell treats an unquoted
+> `A=1,B=2,C=3` as an array and hands gcloud a single space-joined string, so all
+> your vars collapse into the first one (symptom: a `400 ... unexpected model name
+> format` at runtime). Quote it:
+> ```powershell
+> gcloud run deploy deskpilot --source . --region asia-southeast1 --allow-unauthenticated `
+>   --set-env-vars "DESKPILOT_MODEL=gemini-3.5-flash,GOOGLE_GENAI_USE_VERTEXAI=FALSE,GOOGLE_CLOUD_PROJECT=$PROJECT" `
+>   --set-secrets GOOGLE_API_KEY=gemini-api-key:latest
+> ```
+> To fix an already-deployed service without a full redeploy:
+> ```powershell
+> gcloud run services update deskpilot --region asia-southeast1 `
+>   --update-env-vars "DESKPILOT_MODEL=gemini-3.5-flash,GOOGLE_GENAI_USE_VERTEXAI=FALSE,GOOGLE_CLOUD_PROJECT=$PROJECT"
+> ```
+
 **Option B — Vertex AI (no API key; uses the runtime service account):**
 
 ```bash

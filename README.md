@@ -11,15 +11,20 @@ setups, and writes a single plan back to its memory — unattended.
 > order and gives no personalized buy/sell advice. It surfaces setups and
 > reasoning; you decide and execute.
 
-Built for the **All Things Agentic Hackathon** (Taskmaster category — "bring your
-own friction": the daily desk routine).
+Built for the **All Things Agentic Hackathon** (Taskmaster category — an
+event-driven workflow with autonomous routing: the daily desk routine, run
+start to finish without step-by-step guidance).
+
+**Live demo:** https://deskpilot-1016762985649.asia-southeast1.run.app/dev-ui/
+(pick the `deskpilot` app, send *"Run today's desk plan"*).
 
 ---
 
 ## What it is (the agentic part)
 
-Deskpilot is a **Google ADK** multi-agent system. An Orchestrator delegates to
-three specialists via ADK agent-transfer, all running on **Gemini (≥ 3.5)**:
+Deskpilot is a **Google ADK** multi-agent system. An Orchestrator calls three
+specialists *as tools* (ADK `AgentTool`) and stays in control for the whole run,
+all running on **Gemini (≥ 3.5)**:
 
 | Agent | Role | Tools |
 |---|---|---|
@@ -53,19 +58,27 @@ broker-portfolio-sync  →  portfolio_snapshot.json  →  Deskpilot (ADK + Gemin
 
 ## Quickstart (local)
 
-```bash
-cd D:/Learn/Google/Deskpilot
-py -3.14 -m pip install -r requirements.txt
-cp .env.example .env        # then fill in GOOGLE_API_KEY + DESKPILOT_MODEL
-py -3.14 -m pytest -q       # tools + memory tests (no key needed)
-py -3.14 -m deskpilot.run "Run today's desk plan"   # needs a valid Gemini key
-```
-
-Or use the ADK dev UI:
+Requires **Python 3.11+**. On macOS/Linux use `python`; on Windows use the
+launcher `py -3.14` (any 3.11+ interpreter that has the deps works).
 
 ```bash
-py -3.14 server.py          # http://localhost:8080/dev-ui/
+pip install -r requirements.txt
+cp .env.example .env          # then fill in GOOGLE_API_KEY + DESKPILOT_MODEL
+pytest -q                     # tools + memory tests (no key/network needed)
+python -m deskpilot.run "Run today's desk plan"   # needs a valid Gemini key
 ```
+
+Or use the ADK dev UI locally:
+
+```bash
+python server.py              # http://localhost:8080/dev-ui/
+```
+
+## Deploy to Cloud Run
+
+One-command source deploy (Firestore memory + Gemini via Secret Manager). Full
+walkthrough — enabling APIs, creating Firestore, storing the key, IAM — is in
+[DEPLOY.md](DEPLOY.md). The hosted demo above was deployed this way.
 
 ## Layout
 

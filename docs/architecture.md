@@ -19,9 +19,9 @@ flowchart TB
         RISK["RiskOfficer<br/>(LlmAgent)"]
         MKT["MarketAnalyst<br/>(LlmAgent)"]
         OPT["OptionsStrategist<br/>(LlmAgent)"]
-        ORCH -- agent-transfer --> RISK
-        ORCH -- agent-transfer --> MKT
-        ORCH -- agent-transfer --> OPT
+        ORCH -- "AgentTool (call & return)" --> RISK
+        ORCH -- "AgentTool (call & return)" --> MKT
+        ORCH -- "AgentTool (call & return)" --> OPT
     end
 
     subgraph Tools["Function tools (read-only)"]
@@ -86,7 +86,12 @@ sequenceDiagram
 
 - **Orchestrator–specialist over one mega-prompt.** Each specialist has a narrow
   instruction and only the tools it needs, which keeps tool-selection accurate
-  and the reasoning auditable (ADK streams every transfer and tool call).
+  and the reasoning auditable (ADK streams every tool call).
+- **AgentTool, not sub-agent transfer.** The Orchestrator calls each specialist
+  *as a tool* (ADK `AgentTool`) and keeps control for the whole run, so it can
+  gather every specialist's output and finish by persisting one plan. A plain
+  `sub_agents` transfer hands control away and never returns — which cannot
+  complete a prescribed multi-step routine.
 - **Deterministic data, agentic judgment.** Numbers (P/L, FIFO, FX, technicals)
   come from deterministic code; Gemini does prioritization and synthesis, not
   arithmetic. This is the split that makes the output trustworthy.
