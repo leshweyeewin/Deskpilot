@@ -5,9 +5,19 @@ model enabled (Vertex AI) or a Gemini API key.
 
 ```bash
 export PROJECT=your-gcp-project-id
-export REGION=us-central1
+export REGION=asia-southeast1          # Singapore -- Cloud Run + Firestore
+export MODEL_LOCATION=global           # Vertex only: newest Gemini lands here first
 gcloud config set project $PROJECT
 ```
+
+> **Region notes for SG:**
+> - **Cloud Run + Firestore** run in `asia-southeast1` (Singapore) — low latency,
+>   in-region data. **Firestore's location is permanent** for the project, so
+>   choose it deliberately.
+> - **Model location is separate.** With the **Gemini API key** path, region is
+>   irrelevant (the API is global). With **Vertex AI**, the newest Gemini models
+>   may not be in `asia-southeast1` yet — keep the model on `global` (or
+>   `us-central1`) via `GOOGLE_CLOUD_LOCATION` while infra stays in Singapore.
 
 ## 1. Enable APIs
 
@@ -51,8 +61,11 @@ gcloud run deploy deskpilot \
   --source . \
   --region $REGION \
   --allow-unauthenticated \
-  --set-env-vars DESKPILOT_MODEL=gemini-3.5-flash,GOOGLE_GENAI_USE_VERTEXAI=TRUE,GOOGLE_CLOUD_PROJECT=$PROJECT,GOOGLE_CLOUD_LOCATION=$REGION
+  --set-env-vars DESKPILOT_MODEL=gemini-3.5-flash,GOOGLE_GENAI_USE_VERTEXAI=TRUE,GOOGLE_CLOUD_PROJECT=$PROJECT,GOOGLE_CLOUD_LOCATION=$MODEL_LOCATION
 ```
+
+The service itself runs in `asia-southeast1` (`--region $REGION`); only the Vertex
+*model* call goes to `$MODEL_LOCATION`.
 
 Grant the runtime service account `roles/datastore.user` (Firestore) and, for
 Vertex, `roles/aiplatform.user`.
