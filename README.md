@@ -18,6 +18,8 @@ start to finish without step-by-step guidance).
 **Live demo:** https://deskpilot-1016762985649.asia-southeast1.run.app/dev-ui/
 (pick the `deskpilot` app, send *"Run today's desk plan"*).
 
+![Deskpilot architecture](docs/architecture.png)
+
 ---
 
 ## What it is (the agentic part)
