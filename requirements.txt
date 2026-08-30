@@ -1,0 +1,16 @@
+# Deskpilot runtime dependencies
+
+# Google Agent Framework (required category) + Gemini access
+google-adk>=1.0.0
+google-genai>=1.0.0
+
+# Google Cloud infra (required category): Firestore memory bank
+google-cloud-firestore>=2.16.0
+
+# Serving on Cloud Run
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+
+# Market data + config
+yfinance>=0.2.40
+python-dotenv>=1.0.0

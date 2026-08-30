@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Secrets & credentials -- never commit
+.env
+*.json.key
+service-account*.json
+*-key.json
+
+# Local memory fallback (runtime state)
+data/memory_fallback.json
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

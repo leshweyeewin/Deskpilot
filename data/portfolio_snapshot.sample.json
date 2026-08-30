@@ -1,0 +1,61 @@
+{
+  "as_of": "2026-08-30",
+  "base_currency": "SGD",
+  "cash": {
+    "SGD": 12450.0,
+    "USD": 3120.55
+  },
+  "positions": [
+    {
+      "broker": "Longbridge",
+      "ticker": "NVDA",
+      "qty": 40,
+      "avg_cost": 118.2,
+      "market_price": 172.4,
+      "currency": "USD",
+      "unrealized_pl": 2168.0
+    },
+    {
+      "broker": "Tiger",
+      "ticker": "AAPL",
+      "qty": 60,
+      "avg_cost": 214.1,
+      "market_price": 229.85,
+      "currency": "USD",
+      "unrealized_pl": 945.0
+    },
+    {
+      "broker": "MooMoo",
+      "ticker": "GOOGL",
+      "qty": 25,
+      "avg_cost": 168.9,
+      "market_price": 201.3,
+      "currency": "USD",
+      "unrealized_pl": 810.0
+    }
+  ],
+  "options": [
+    {
+      "broker": "Tiger",
+      "underlying": "NVDA",
+      "type": "PUT",
+      "strike": 160,
+      "expiry": "2026-09-03",
+      "qty": -2,
+      "action": "sell-to-open",
+      "premium": 3.1,
+      "currency": "USD"
+    },
+    {
+      "broker": "Longbridge",
+      "underlying": "AAPL",
+      "type": "CALL",
+      "strike": 240,
+      "expiry": "2026-09-24",
+      "qty": -1,
+      "action": "sell-to-open",
+      "premium": 4.55,
+      "currency": "USD"
+    }
+  ]
+}
