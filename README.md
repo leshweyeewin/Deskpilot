@@ -48,8 +48,7 @@ Deskpilot is the **agentic brain**; the deterministic
 [`broker-portfolio-sync`](../broker-portfolio-sync) pipeline is the **data
 backend**. That pipeline consolidates Longbridge + Tiger + MooMoo into one
 normalized snapshot (common schema → FIFO P/L → FX → SGD); Deskpilot reads that
-snapshot via `load_portfolio` and reasons over it. See
-[SUBMISSION.md](SUBMISSION.md) for the incorporated-code disclosure.
+snapshot via `load_portfolio` and reasons over it. See the disclosure below.
 
 ```
 broker-portfolio-sync  →  portfolio_snapshot.json  →  Deskpilot (ADK + Gemini)  →  daily plan (Firestore)
@@ -97,12 +96,22 @@ Deskpilot/
 ├─ tests/              # deterministic unit tests
 ├─ Dockerfile
 ├─ DEPLOY.md           # Cloud Run + Firestore deploy
-├─ SUBMISSION.md       # hackathon deliverables + disclosures
 └─ docs/architecture.md
 ```
 
 ## License / disclosure
 
-Personal hackathon project. Incorporates prior work by the same author
-(`broker-portfolio-sync`, `nexus-concierge`) — disclosed in
-[SUBMISSION.md](SUBMISSION.md). No credentials are committed; see `.gitignore`.
+Personal hackathon project (All Things Agentic — Taskmaster track). It is a **new
+project** built during the submission window that incorporates prior work by the
+same author, disclosed here per the "New Projects Only" rule:
+
+- **broker-portfolio-sync** — the author's deterministic multi-broker sync +
+  analytics pipeline, used as the upstream data contract (portfolio snapshot). No
+  broker credentials or SDKs are vendored into Deskpilot.
+- **nexus-concierge** — the author's earlier ADK multi-agent project. Deskpilot
+  reuses the orchestrator–specialist *pattern* but is a fresh implementation
+  targeting Gemini 3.5+, Cloud Run, and Firestore.
+
+All agent code, tools, memory layer, serving, deploy config, and tests in this
+repository were written for this submission. No credentials are committed; see
+`.gitignore`.

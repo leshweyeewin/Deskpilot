@@ -15,6 +15,11 @@ service-account*.json
 # Local memory fallback (runtime state)
 data/memory_fallback.json
 
+# Submission-helper docs (kept local, not published)
+SUBMISSION.md
+DEVPOST.md
+DEMO_SCRIPT.md
+
 # OS / editor
 .DS_Store
 .idea/
