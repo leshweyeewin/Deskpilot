@@ -19,6 +19,8 @@ start to finish without step-by-step guidance).
 **Live demo:** https://deskpilot-1016762985649.asia-southeast1.run.app/dev-ui/
 (pick the `deskpilot` app, send *"Run today's desk plan"*).
 
+**Write-up:** https://blog.pancherry.com/deskpilot/
+
 ![Deskpilot running the daily desk routine](docs/deskpilot_demo.gif)
 
 *One prompt → the orchestrator delegates to RiskOfficer, MarketAnalyst and
