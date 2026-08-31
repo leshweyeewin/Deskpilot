@@ -85,6 +85,28 @@ Or use the ADK dev UI locally:
 python server.py              # http://localhost:8080/dev-ui/
 ```
 
+## Reproducible tests
+
+The suite is **deterministic — no API key, no network, no credentials** — so a
+reviewer can verify it on a clean checkout:
+
+```bash
+pip install -r requirements.txt
+pytest -q                     # expect: 9 passed
+```
+
+The 9 tests (in [`tests/test_tools.py`](tests/test_tools.py)) cover the logic that
+runs before any LLM call:
+
+- **Market tools** — RSI/SMA math, and `_num` sanitizing `NaN`/`inf`/`None` to
+  valid JSON (otherwise Gemini rejects the tool result with a 400).
+- **Portfolio** — parsing a published-Sheet CSV into a snapshot: `kind` routing,
+  type coercion, comma-formatted cash, derived `unrealized_pl` and `days_to_expiry`.
+- **Resilience** — `get_quote` returns an error dict instead of raising when
+  yfinance fails, and `load_portfolio` errors cleanly on a missing snapshot.
+- **Memory** — `remember`/`recall`/`save_daily_plan`/`get_last_plan` round-trip
+  against the local backend (no GCP project needed).
+
 ## Deploy to Cloud Run
 
 One-command source deploy (Firestore memory + Gemini via Secret Manager). Full
