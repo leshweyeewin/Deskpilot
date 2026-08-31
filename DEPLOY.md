@@ -123,12 +123,35 @@ Create the bot with @BotFather (token) and get your chat id from @userinfobot.
 
 ## 6. (Optional) Daily autonomous run
 
-Trigger the daily routine on a schedule with Cloud Scheduler hitting the `/run`
-endpoint (or a small Cloud Run Job that calls `deskpilot.run`):
+Run the whole routine on a schedule with a **Cloud Run Job** (runs `deskpilot.run`
+to completion and delivers to Telegram) triggered by **Cloud Scheduler**. Anchor
+the time to **US Eastern** so it always fires in US pre-market and adjusts for
+daylight saving automatically.
+
+Deploy the routine as a job (same source; overrides the entrypoint):
 
 ```bash
-gcloud scheduler jobs create http deskpilot-daily \
-  --schedule="0 6 * * 1-5" --time-zone="Asia/Singapore" \
-  --uri="$(gcloud run services describe deskpilot --region $REGION --format='value(status.url)')/run" \
-  --http-method=POST --message-body='{...ADK run payload...}'
+gcloud run jobs deploy deskpilot-daily-job --source . --region $REGION \
+  --command python --args "-m,deskpilot.run,Run today's desk plan" \
+  --set-env-vars "DESKPILOT_MODEL=gemini-3.5-flash,GOOGLE_GENAI_USE_VERTEXAI=FALSE,GOOGLE_CLOUD_PROJECT=$PROJECT,DESKPILOT_PORTFOLIO_CSV_URL=YOUR_CSV_URL,TELEGRAM_CHAT_ID=YOUR_CHAT_ID" \
+  --set-secrets "GOOGLE_API_KEY=gemini-api-key:latest"
 ```
+
+Let the runtime service account invoke the job, then schedule it for 8am ET on
+weekdays (US pre-market):
+
+```bash
+gcloud run jobs add-iam-policy-binding deskpilot-daily-job --region $REGION \
+  --member "serviceAccount:PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
+  --role roles/run.invoker
+
+gcloud scheduler jobs create http deskpilot-premarket --location $REGION \
+  --schedule "0 8 * * 1-5" --time-zone "America/New_York" \
+  --uri "https://$REGION-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/$PROJECT/jobs/deskpilot-daily-job:run" \
+  --http-method POST \
+  --oauth-service-account-email PROJECT_NUMBER-compute@developer.gserviceaccount.com
+```
+
+`0 8 * * 1-5` = 08:00 Mon–Fri in the chosen time zone. PowerShell users: quote the
+`--set-env-vars` value and run each command on one line (a leading `--` on its own
+line is a parse error).

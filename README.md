@@ -150,6 +150,10 @@ One-command source deploy (Firestore memory + Gemini via Secret Manager). Full
 walkthrough — enabling APIs, creating Firestore, storing the key, IAM — is in
 [DEPLOY.md](DEPLOY.md). The hosted demo above was deployed this way.
 
+For a fully hands-off run, a **Cloud Scheduler** job triggers a **Cloud Run Job**
+(which runs the routine and delivers to Telegram) automatically before every US
+market open — no human trigger. See DEPLOY.md § 6.
+
 ## Layout
 
 ```

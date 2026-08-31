@@ -20,6 +20,15 @@ SUBMISSION.md
 DEVPOST.md
 DEMO_SCRIPT.md
 
+# Demo-video artifacts + capture scratch (kept local, not published)
+recordings/
+build_full_demo_video.py
+capture_live_demo.py
+record_live_sheet.py
+record_demo.py
+explore_ui.py
+test_run.py
+
 # OS / editor
 .DS_Store
 .idea/
