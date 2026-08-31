@@ -52,3 +52,10 @@ BASE_CURRENCY: str = os.getenv("DESKPILOT_BASE_CURRENCY", "SGD")
 PORTFOLIO_SNAPSHOT: Path = Path(
     os.getenv("DESKPILOT_PORTFOLIO_SNAPSHOT", DATA_DIR / "portfolio_snapshot.sample.json")
 )
+
+# --- Notifications (optional) ----------------------------------------------
+# Deliver the finished daily plan to a Telegram chat via the Bot API. Both are
+# optional: when unset, notify_plan is a graceful no-op, so the agent still runs
+# everywhere. The token is a secret (Secret Manager in prod); the chat id is not.
+TELEGRAM_BOT_TOKEN: str | None = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID: str | None = os.getenv("TELEGRAM_CHAT_ID")

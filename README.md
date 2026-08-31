@@ -18,6 +18,12 @@ start to finish without step-by-step guidance).
 **Live demo:** https://deskpilot-1016762985649.asia-southeast1.run.app/dev-ui/
 (pick the `deskpilot` app, send *"Run today's desk plan"*).
 
+![Deskpilot running the daily desk routine](docs/deskpilot_demo.gif)
+
+*One prompt → the orchestrator delegates to RiskOfficer, MarketAnalyst and
+OptionsStrategist, recalls and updates memory, then saves the day's plan —
+captured live from the hosted demo above.*
+
 ![Deskpilot architecture](docs/architecture.png)
 
 ---
@@ -30,13 +36,21 @@ all running on **Gemini (≥ 3.5)**:
 
 | Agent | Role | Tools |
 |---|---|---|
-| **deskpilot** (Orchestrator) | Runs the daily routine, delegates, synthesizes the plan | `load_portfolio`, `remember`, `recall`, `save_daily_plan`, `get_last_plan` |
+| **deskpilot** (Orchestrator) | Runs the daily routine, delegates, synthesizes the plan | `load_portfolio`, `remember`, `recall`, `save_daily_plan`, `get_last_plan`, `notify_plan` |
 | **RiskOfficer** | Reviews the live book: near-term expiries, concentration, P/L | `load_portfolio` |
 | **MarketAnalyst** | Technical read per ticker (trend, RSI, ATR%, 52w position) | `get_quote` |
 | **OptionsStrategist** | Sizes wheel / credit-spread income using implied expected move | `get_quote`, `get_expected_move` |
 
 State persists in a **Firestore** memory bank (with a local-JSON fallback for
-offline demos). Served on **Cloud Run** via ADK's FastAPI app.
+offline demos). Served on **Cloud Run** via ADK's FastAPI app. A run ends by
+delivering the finished plan to **Telegram** (`notify_plan`) so the morning brief
+lands on your phone — a graceful no-op when Telegram isn't configured.
+
+**Built to run unattended.** Every market and notify tool returns an error dict
+instead of raising, the memory bank falls back to local JSON when Firestore is
+unavailable, and the runner **auto-retries transient Gemini `503`s** (high-demand
+spikes) with exponential backoff — so a busy moment or a flaky feed never crashes
+a run.
 
 ## Mandatory tech (all three satisfied)
 
@@ -92,10 +106,10 @@ reviewer can verify it on a clean checkout:
 
 ```bash
 pip install -r requirements.txt
-pytest -q                     # expect: 9 passed
+pytest -q                     # expect: 11 passed
 ```
 
-The 9 tests (in [`tests/test_tools.py`](tests/test_tools.py)) cover the logic that
+The 11 tests (in [`tests/test_tools.py`](tests/test_tools.py)) cover the logic that
 runs before any LLM call:
 
 - **Market tools** — RSI/SMA math, and `_num` sanitizing `NaN`/`inf`/`None` to
@@ -104,6 +118,8 @@ runs before any LLM call:
   type coercion, comma-formatted cash, derived `unrealized_pl` and `days_to_expiry`.
 - **Resilience** — `get_quote` returns an error dict instead of raising when
   yfinance fails, and `load_portfolio` errors cleanly on a missing snapshot.
+- **Notifications** — `notify_plan` skips cleanly when Telegram is unconfigured,
+  and caps the message at Telegram's 4096-char limit when it is.
 - **Memory** — `remember`/`recall`/`save_daily_plan`/`get_last_plan` round-trip
   against the local backend (no GCP project needed).
 
@@ -123,7 +139,8 @@ Deskpilot/
 │  ├─ run.py           # CLI runner (streams tool calls + final plan)
 │  ├─ tools/
 │  │  ├─ market.py     # get_quote, get_expected_move (yfinance)
-│  │  └─ portfolio.py  # load_portfolio (published Google Sheet CSV → snapshot)
+│  │  ├─ portfolio.py  # load_portfolio (published Google Sheet CSV → snapshot)
+│  │  └─ notify.py     # notify_plan (deliver the plan to Telegram)
 │  └─ memory/store.py  # Firestore memory bank + local fallback
 ├─ server.py           # Cloud Run entrypoint (ADK FastAPI app)
 ├─ data/               # portfolio_template.csv + JSON sample fallback

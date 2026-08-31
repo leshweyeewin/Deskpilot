@@ -86,6 +86,45 @@ def test_build_snapshot_from_rows_splits_by_kind_and_coerces_types():
     assert snap["cash"]["SGD"] == 12450.0
 
 
+def test_notify_plan_noop_when_unconfigured(monkeypatch):
+    # No token/chat -> graceful skip, never raises, never touches the network.
+    from deskpilot.tools import notify
+
+    monkeypatch.setattr(notify, "TELEGRAM_BOT_TOKEN", None)
+    monkeypatch.setattr(notify, "TELEGRAM_CHAT_ID", None)
+    result = notify.notify_plan("today's plan")
+    assert result["sent"] is False and "skipped" in result
+
+
+def test_notify_plan_posts_and_truncates_long_text(monkeypatch):
+    # Configured path: posts to the Bot API and caps the message at 4096 chars.
+    from deskpilot.tools import notify
+
+    sent: dict = {}
+
+    class _Resp:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def read(self):
+            return json.dumps({"ok": True}).encode("utf-8")
+
+    def _fake_urlopen(req, timeout=0):
+        sent["len"] = len(json.loads(req.data)["text"])
+        return _Resp()
+
+    monkeypatch.setattr(notify, "TELEGRAM_BOT_TOKEN", "tok")
+    monkeypatch.setattr(notify, "TELEGRAM_CHAT_ID", "42")
+    monkeypatch.setattr(notify.urllib.request, "urlopen", _fake_urlopen)
+
+    result = notify.notify_plan("x" * 5000)
+    assert result["sent"] is True
+    assert sent["len"] <= 4096
+
+
 def test_memory_roundtrip_local_backend(monkeypatch, tmp_path):
     # Rebuild the bank against a temp file with no GCP project -> local backend.
     from deskpilot.memory import store

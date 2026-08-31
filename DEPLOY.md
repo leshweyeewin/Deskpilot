@@ -100,6 +100,21 @@ Columns are in `data/portfolio_template.csv`. If you skip this, the service uses
 the shipped JSON sample. (PowerShell: quote the whole `--update-env-vars` value, as
 noted above.)
 
+### Deliver the plan to Telegram (optional)
+
+To have each run push the finished plan to a Telegram chat, store the bot token as
+a secret and set the chat id as an env var (both optional — unset means the step
+is skipped and the run still succeeds):
+
+```bash
+printf '%s' "YOUR_TELEGRAM_BOT_TOKEN" | gcloud secrets create telegram-bot-token --data-file=-
+gcloud run services update deskpilot --region $REGION \
+  --update-secrets TELEGRAM_BOT_TOKEN=telegram-bot-token:latest \
+  --update-env-vars TELEGRAM_CHAT_ID=123456789
+```
+
+Create the bot with @BotFather (token) and get your chat id from @userinfobot.
+
 ## 5. Use it
 
 - Dev UI: open the service URL + `/dev-ui/`, pick the `deskpilot` app, chat.

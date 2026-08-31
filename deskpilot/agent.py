@@ -18,6 +18,7 @@ from google.adk.tools.agent_tool import AgentTool
 from .config import MODEL
 from .memory.store import get_last_plan, recall, remember, save_daily_plan
 from .tools.market import get_expected_move, get_quote
+from .tools.notify import notify_plan
 from .tools.portfolio import load_portfolio
 
 # --- Specialists -----------------------------------------------------------
@@ -85,7 +86,10 @@ root_agent = LlmAgent(
         "4. Use recall/remember to carry trade theses across days.\n"
         "5. Synthesize ONE prioritized daily plan: what to watch, what setups are "
         "actionable, what risk to manage today. Then call save_daily_plan with the "
-        "final plan text, and present that same plan as your final answer.\n\n"
+        "final plan text.\n"
+        "6. Call notify_plan with the same final plan text to deliver it to the "
+        "user (a no-op if notifications aren't configured), then present that plan "
+        "as your final answer.\n\n"
         "Rules: you are read-only decision support and MUST NOT place, modify, or "
         "cancel any order, or give personalized financial advice framed as a "
         "recommendation to buy/sell for a specific person's situation. Present "
@@ -101,5 +105,6 @@ root_agent = LlmAgent(
         recall,
         save_daily_plan,
         get_last_plan,
+        notify_plan,
     ],
 )
