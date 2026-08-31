@@ -84,6 +84,24 @@ When the env var is unset, Deskpilot uses the shipped JSON sample, so it runs wi
 no network or credentials (this is what the tests use). You can keep the sheet
 current by hand, or feed it from any pipeline you already run.
 
+## Deliver the plan to Telegram (optional)
+
+Each run ends by pushing the finished plan to a Telegram chat, so the morning
+brief lands on your phone. It's optional — when unset, delivery is skipped and the
+run still succeeds.
+
+1. Create a bot with **@BotFather** and copy its token.
+2. Send your bot any message, then get your chat id from **@userinfobot** (for a
+   private chat, the chat id is your own user id — not the bot's).
+3. Set both in your `.env` (or as Cloud Run secrets/env — see [DEPLOY.md](DEPLOY.md)):
+   ```bash
+   TELEGRAM_BOT_TOKEN=123456:ABC-your-bot-token
+   TELEGRAM_CHAT_ID=123456789
+   ```
+
+`notify_plan` is outbound-only — it sends a message and nothing else, consistent
+with Deskpilot being read-only.
+
 ## Quickstart (local)
 
 Requires **Python 3.11+**. On macOS/Linux use `python`; on Windows use the
