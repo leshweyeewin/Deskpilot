@@ -5,7 +5,8 @@
 Deskpilot turns a synced multi-broker portfolio into one prioritized daily plan.
 Every morning it recalls yesterday's intent, reviews the live book for risk,
 reads the technicals on the names that need a decision, sizes any options-income
-setups, and writes a single plan back to its memory — unattended.
+setups, writes a single plan back to memory, and delivers it to your phone via
+Telegram — unattended.
 
 > **Read-only decision support.** Deskpilot never places, modifies, or cancels an
 > order and gives no personalized buy/sell advice. It surfaces setups and
@@ -153,10 +154,10 @@ Deskpilot/
 ## License / disclosure
 
 Personal hackathon project (All Things Agentic — Taskmaster track). It is a **new
-project** built during the submission window. All code here — agents, tools,
-memory layer, serving, deploy config, and tests — was written for this submission.
-Its data source is a plain Google Sheet, so it has no dependency on any of the
-author's other systems. The orchestrator–specialist approach is informed by the
-author's earlier ADK experiments, but this is a fresh implementation targeting
-Gemini 3.5+, Cloud Run, and Firestore. No credentials are committed; see
-`.gitignore`.
+project** built during the submission window; all agent, tool, memory, serving,
+deploy, and test code here was written for this submission. Its data source is a
+published Google Sheet, so it has **no runtime dependency** on any of the author's
+other systems — a reviewer can point it at their own sheet with one env var. The
+author populates their own sheet from a pre-existing project, `broker-portfolio-sync`
+(prior work, not part of this repo), but that is an optional data-prep convenience,
+not a component of Deskpilot. No credentials are committed; see `.gitignore`.
