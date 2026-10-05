@@ -93,7 +93,10 @@ def notify_plan(plan: str) -> dict[str, Any]:
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         return {"sent": False, "skipped": "telegram not configured"}
 
-    chunks = _split(plan)
+    # Models emit CommonMark **bold**, but Telegram's legacy Markdown only knows
+    # single-asterisk *bold* — left as-is, the ** shows literal asterisks or
+    # trips a parse error. Collapse to the one form Telegram renders.
+    chunks = _split(plan.replace("**", "*"))
     for chunk in chunks:
         base = {
             "chat_id": TELEGRAM_CHAT_ID,

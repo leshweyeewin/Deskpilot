@@ -129,6 +129,40 @@ def test_notify_plan_posts_and_splits_long_text(monkeypatch):
     assert "".join(texts) == "x" * 5000
 
 
+def test_notify_plan_normalizes_markdown_bold(monkeypatch):
+    # Models emit CommonMark **bold**; Telegram legacy Markdown needs *bold*.
+    # notify_plan collapses ** -> * so the formatting actually renders.
+    from deskpilot.tools import notify
+
+    sent: dict = {}
+
+    class _Resp:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def read(self):
+            return json.dumps({"ok": True}).encode("utf-8")
+
+    def _fake_urlopen(req, timeout=0):
+        body = json.loads(req.data)
+        sent["text"] = body["text"]
+        sent["parse_mode"] = body.get("parse_mode")
+        return _Resp()
+
+    monkeypatch.setattr(notify, "TELEGRAM_BOT_TOKEN", "tok")
+    monkeypatch.setattr(notify, "TELEGRAM_CHAT_ID", "42")
+    monkeypatch.setattr(notify.urllib.request, "urlopen", _fake_urlopen)
+
+    result = notify.notify_plan("*Risk*\n• down **-$35,807** today")
+    assert result["sent"] is True
+    assert sent["parse_mode"] == "Markdown"
+    assert "**" not in sent["text"]
+    assert "*-$35,807*" in sent["text"]
+
+
 def test_memory_roundtrip_local_backend(monkeypatch, tmp_path):
     # Rebuild the bank against a temp file with no GCP project -> local backend.
     from deskpilot.memory import store
