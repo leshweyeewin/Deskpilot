@@ -96,11 +96,12 @@ def test_notify_plan_noop_when_unconfigured(monkeypatch):
     assert result["sent"] is False and "skipped" in result
 
 
-def test_notify_plan_posts_and_truncates_long_text(monkeypatch):
-    # Configured path: posts to the Bot API and caps the message at 4096 chars.
+def test_notify_plan_posts_and_splits_long_text(monkeypatch):
+    # Configured path: posts to the Bot API, splitting a >4096-char plan across
+    # several messages (each <=4096) instead of truncating the tail.
     from deskpilot.tools import notify
 
-    sent: dict = {}
+    texts: list[str] = []
 
     class _Resp:
         def __enter__(self):
@@ -113,7 +114,7 @@ def test_notify_plan_posts_and_truncates_long_text(monkeypatch):
             return json.dumps({"ok": True}).encode("utf-8")
 
     def _fake_urlopen(req, timeout=0):
-        sent["len"] = len(json.loads(req.data)["text"])
+        texts.append(json.loads(req.data)["text"])
         return _Resp()
 
     monkeypatch.setattr(notify, "TELEGRAM_BOT_TOKEN", "tok")
@@ -122,7 +123,10 @@ def test_notify_plan_posts_and_truncates_long_text(monkeypatch):
 
     result = notify.notify_plan("x" * 5000)
     assert result["sent"] is True
-    assert sent["len"] <= 4096
+    assert result["messages"] == len(texts) > 1
+    assert all(len(t) <= 4096 for t in texts)
+    # nothing dropped: the pieces reconstruct the original
+    assert "".join(texts) == "x" * 5000
 
 
 def test_memory_roundtrip_local_backend(monkeypatch, tmp_path):
