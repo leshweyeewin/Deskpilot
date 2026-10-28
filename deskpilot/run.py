@@ -65,6 +65,17 @@ async def _run(prompt: str) -> bool:
 
 
 def main() -> None:
+    # Streamed tool args can contain non-ASCII (e.g. "σ" for sigma). When stdout
+    # is redirected to a file (a scheduled-task log), Windows defaults to cp1252
+    # and print() would raise UnicodeEncodeError, killing the run before it ever
+    # reaches notify_plan. The streaming is only diagnostic -- force UTF-8 so a
+    # stray character can never take the run down.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
     prompt = " ".join(sys.argv[1:]).strip() or DEFAULT_PROMPT
     print(f"Deskpilot :: model={MODEL}\nPrompt: {prompt}\n")
     for attempt in range(1, _MAX_ATTEMPTS + 1):
