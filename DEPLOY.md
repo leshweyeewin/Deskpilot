@@ -155,3 +155,40 @@ gcloud scheduler jobs create http deskpilot-premarket --location $REGION \
 `0 8 * * 1-5` = 08:00 Mon–Fri in the chosen time zone. PowerShell users: quote the
 `--set-env-vars` value and run each command on one line (a leading `--` on its own
 line is a parse error).
+
+## 7. (Alternative) Daily run on your own machine (Windows)
+
+Instead of Cloud Scheduler + a Cloud Run Job, you can run the whole routine
+locally on a schedule — no cloud infra, the plan still lands on Telegram. The
+trade-off: it fires only while your PC is on and you're logged in (a missed 4pm
+run starts when you next log in), whereas Cloud Scheduler is always-on.
+
+1. **Local prerequisites** — a Python 3.11+ with the deps and a filled `.env`:
+   ```powershell
+   py -3.14 -m pip install -r requirements.txt
+   copy .env.example .env   # then fill GOOGLE_API_KEY, DESKPILOT_PORTFOLIO_CSV_URL, TELEGRAM_*
+   py -3.14 -m deskpilot.run "Run today's desk plan"   # one manual run to confirm
+   ```
+
+2. **Launcher** — `run_daily.bat` (in the repo root) `cd`s to its own folder,
+   runs the routine, and appends output + exit code to `logs\daily_run.log`.
+
+3. **Schedule it** — register a weekday 4pm task that runs as you (no admin, no
+   stored password), catching up a missed run when the machine is next available:
+   ```powershell
+   $dir = (Get-Location).Path
+   $action    = New-ScheduledTaskAction -Execute "$dir\run_daily.bat" -WorkingDirectory $dir
+   $trigger   = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday -At 4:00PM
+   $settings  = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 30)
+   $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Limited
+   Register-ScheduledTask -TaskName "Deskpilot Daily Plan" -Action $action -Trigger $trigger -Settings $settings -Principal $principal -Force
+   ```
+   The trigger fires on **local machine time**, so set the PC's clock/zone to
+   wherever you want 4pm measured (e.g. Singapore for 4pm SGT).
+
+4. **Verify** — run it once on demand and read the log:
+   ```powershell
+   Start-ScheduledTask -TaskName "Deskpilot Daily Plan"
+   (Get-ScheduledTaskInfo -TaskName "Deskpilot Daily Plan").LastTaskResult   # 0 = success
+   Get-Content logs\daily_run.log -Tail 40
+   ```
